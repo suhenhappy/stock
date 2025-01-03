@@ -21,6 +21,7 @@ __date__ = '2023/3/10 '
 
 # 每日股票龙虎榜
 def save_nph_stock_top_data(date, before=True):
+    logging.error("每日股票龙虎榜：" + date.strftime("%Y-%m-%d"))
     if before:
         return
 
@@ -45,6 +46,7 @@ def save_nph_stock_top_data(date, before=True):
 
 # 每日股票资金流向
 def save_nph_stock_fund_flow_data(date, before=True):
+    logging.error("每日股票资金流向：" + date.strftime("%Y-%m-%d"))
     if before:
         return
 
@@ -112,6 +114,7 @@ def run_check_stock_fund_flow(times):
 
 # 每日行业资金流向
 def save_nph_stock_sector_fund_flow_data(date, before=True):
+    logging.error("每日行业资金流向：" + date.strftime("%Y-%m-%d"))
     if before:
         return
 
@@ -182,6 +185,7 @@ def run_check_stock_sector_fund_flow(index_sector, times):
 
 # 每日股票分红配送
 def save_nph_stock_bonus(date, before=True):
+    logging.error("每日股票分红配送：" + date.strftime("%Y-%m-%d"))
     if before:
         return
 
@@ -205,6 +209,8 @@ def save_nph_stock_bonus(date, before=True):
 
 # 基本面选股
 def stock_spot_buy(date):
+    logging.error("基本面选股：" + date.strftime("%Y-%m-%d"))
+
     try:
         _table_name = tbs.TABLE_CN_STOCK_SPOT['name']
         if not mdb.checkTableIsExist(_table_name):

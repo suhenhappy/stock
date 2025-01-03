@@ -20,6 +20,7 @@ __date__ = '2023/5/5 '
 
 
 def save_nph_stock_selection_data(date, before=True):
+    logging.error("开始获取选股数据")
     if before:
         return
 

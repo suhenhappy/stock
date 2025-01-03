@@ -20,6 +20,7 @@ __date__ = '2023/3/10 '
 
 # 股票实时行情数据。
 def save_nph_stock_spot_data(date, before=True):
+    logging.error("获取股票实时行情数据："+date.strftime("%Y-%m-%d"))
     if before:
         return
     # 股票列表
