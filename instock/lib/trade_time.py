@@ -129,6 +129,8 @@ def get_trade_hist_interval(date):
 def get_trade_date_last():
     now_time = datetime.datetime.now()
     run_date = now_time.date()
+    run_date = datetime.date(2024, 12, 1)
+
     run_date_nph = run_date
     if is_trade_date(run_date):
         if not is_close(now_time):

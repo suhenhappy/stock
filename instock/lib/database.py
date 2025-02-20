@@ -83,6 +83,7 @@ def insert_other_db_from_df(to_db, data, table_name, cols_type, write_index, pri
     ipt = inspect(engine_mysql)
     col_name_list = data.columns.tolist()
     # 如果有索引，把索引增加到varchar上面。
+    logging.info("插入表数据:"+table_name)
     if write_index:
         # 插入到第一个位置：
         col_name_list.insert(0, data.index.name)
@@ -91,6 +92,7 @@ def insert_other_db_from_df(to_db, data, table_name, cols_type, write_index, pri
             data.to_sql(name=table_name, con=engine_mysql, schema=to_db, if_exists='append',
                         index=write_index, )
         elif not cols_type:
+            logging.info("开始建表" + table_name)
             data.to_sql(name=table_name, con=engine_mysql, schema=to_db, if_exists='append',
                         dtype={col_name: NVARCHAR(255) for col_name in col_name_list}, index=write_index, )
         else:

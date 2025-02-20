@@ -83,11 +83,12 @@ def run_check(strategy_fun, table_name, stocks, date, workers=40):
 
 
 def main():
+    logging.info("抽取股票策略数据-start")
     # 使用方法传递。
     with concurrent.futures.ThreadPoolExecutor() as executor:
         for strategy in tbs.TABLE_CN_STOCK_STRATEGIES:
             executor.submit(runt.run_with_args, prepare, strategy)
-
+    logging.info("抽取股票策略数据-end")
 
 # main函数入口
 if __name__ == '__main__':

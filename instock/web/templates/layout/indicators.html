@@ -1,3 +1,50 @@
 {% extends "../common/meta.html" %}
 
 {% extends "indicators-main.html" %}
+
+{% block main_content %}
+<style>
+.chart-container {
+    width: 100%;
+    height: calc(100vh - 100px); /* 使用视窗高度减去头部空间 */
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.tradingview-widget-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* 确保主内容区域最大化 */
+.main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+.main-content-inner {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+.page-content {
+    padding: 8px !important;
+    width: 100% !important;
+}
+</style>
+
+<div class="main-content">
+    <div class="main-content-inner">
+        <div class="page-content">
+            {% for comp in comp_list %}
+            <div class="chart-container">
+                <div class="tradingview-widget-container" id="{{ comp }}">
+                </div>
+            </div>
+            {% end %}
+        </div>
+    </div>
+</div>
+{% end %}

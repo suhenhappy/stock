@@ -53,9 +53,11 @@ def main():
         executor.submit(sdj.main)
 
     # # # # 第6步创建股票回测
-    bdj.main()
+    logging.info("股票回测")
+    #bdj.main()
 
     # # # # 第7步创建股票闭盘后才有的数据
+    logging.info("每日股票大宗交易")
     acdj.main()
 
     logging.info("######## 完成任务, 使用时间: %s 秒 #######" % (time.time() - start))

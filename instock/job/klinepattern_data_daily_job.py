@@ -80,9 +80,10 @@ def run_check(stocks, date=None, workers=40):
 
 
 def main():
+    logging.info("抽取股票k线数据-start")
     # 使用方法传递。
     runt.run_with_args(prepare)
-
+    logging.info("抽取股票k线数据-end")
 
 # main函数入口
 if __name__ == '__main__':

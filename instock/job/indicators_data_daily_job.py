@@ -154,11 +154,13 @@ def guess_sell(date):
 
 
 def main():
+    logging.info("抽取指标数据-start")
     # 使用方法传递。
     runt.run_with_args(prepare)
     # 二次筛选数据。直接计算买卖股票数据。
     runt.run_with_args(guess_buy)
     runt.run_with_args(guess_sell)
+    logging.info("抽取指标数据-end")
 
 
 # main函数入口

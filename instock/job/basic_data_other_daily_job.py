@@ -21,7 +21,7 @@ __date__ = '2023/3/10 '
 
 # 每日股票龙虎榜
 def save_nph_stock_top_data(date, before=True):
-    logging.error("每日股票龙虎榜：" + date.strftime("%Y-%m-%d"))
+    logging.info("每日股票龙虎榜：" + date.strftime("%Y-%m-%d"))
     if before:
         return
 
@@ -209,7 +209,7 @@ def save_nph_stock_bonus(date, before=True):
 
 # 基本面选股
 def stock_spot_buy(date):
-    logging.error("基本面选股：" + date.strftime("%Y-%m-%d"))
+    logging.info("基本面选股：" + date.strftime("%Y-%m-%d"))
 
     try:
         _table_name = tbs.TABLE_CN_STOCK_SPOT['name']
