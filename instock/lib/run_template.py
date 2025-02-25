@@ -27,7 +27,7 @@ def run_with_args(run_fun, *args):
                 while run_date <= end_date:
                     if trd.is_trade_date(run_date):
                         executor.submit(run_fun, run_date, *args)
-                        time.sleep(2)
+                        time.sleep(5)
                     run_date += datetime.timedelta(days=1)
         except Exception as e:
             logging.error(f"run_template.run_with_args处理异常：{run_fun}{sys.argv}{e}")
@@ -41,7 +41,7 @@ def run_with_args(run_fun, *args):
                     run_date = datetime.datetime(int(tmp_year), int(tmp_month), int(tmp_day)).date()
                     if trd.is_trade_date(run_date):
                         executor.submit(run_fun, run_date, *args)
-                        time.sleep(2)
+                        time.sleep(5)
         except Exception as e:
             logging.error(f"run_template.run_with_args处理异常：{run_fun}{sys.argv}{e}")
     else:

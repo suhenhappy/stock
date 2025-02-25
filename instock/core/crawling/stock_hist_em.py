@@ -172,12 +172,16 @@ def code_id_map_em() -> dict:
     :rtype: dict
     """
     url = "http://80.push2.eastmoney.com/api/qt/clist/get"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+        "Referer": "http://quote.eastmoney.com/center/gridlist.html#hs_a_board"
+    }
     params = {
         "pn": "1",
         "pz": "50000",
         "po": "1",
         "np": "1",
-        "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+        "ut": "bd1d9ddb04089700cf9c27f6f7426282",
         "fltt": "2",
         "invt": "2",
         "fid": "f3",
@@ -185,7 +189,7 @@ def code_id_map_em() -> dict:
         "fields": "f12",
         "_": "1623833739532",
     }
-    r = requests.get(url, params=params)
+    r = requests.get(url, headers=headers,params=params)
     data_json = r.json()
     if not data_json["data"]["diff"]:
         return dict()
@@ -198,7 +202,7 @@ def code_id_map_em() -> dict:
         "pz": "50000",
         "po": "1",
         "np": "1",
-        "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+        "ut": "bd1d9ddb04089700cf9c27f6f7426282",
         "fltt": "2",
         "invt": "2",
         "fid": "f3",
@@ -218,7 +222,7 @@ def code_id_map_em() -> dict:
         "pz": "50000",
         "po": "1",
         "np": "1",
-        "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+        "ut": "bd1d9ddb04089700cf9c27f6f7426282",
         "fltt": "2",
         "invt": "2",
         "fid": "f3",
@@ -260,6 +264,10 @@ def stock_zh_a_hist(
     :rtype: pandas.DataFrame
     """
     code_id_dict = code_id_map_em()
+    if symbol not in code_id_dict:
+        print(f"股票代码 {symbol} 不在 code_id_dict 中")
+        return pd.DataFrame()
+
     adjust_dict = {"qfq": "1", "hfq": "2", "": "0"}
     period_dict = {"daily": "101", "weekly": "102", "monthly": "103"}
     url = "http://push2his.eastmoney.com/api/qt/stock/kline/get"

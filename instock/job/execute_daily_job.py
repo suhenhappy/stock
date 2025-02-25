@@ -54,7 +54,7 @@ def main():
 
     # # # # 第6步创建股票回测
     logging.info("股票回测")
-    #bdj.main()
+    bdj.main()
 
     # # # # 第7步创建股票闭盘后才有的数据
     logging.info("每日股票大宗交易")

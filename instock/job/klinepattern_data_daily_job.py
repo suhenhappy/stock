@@ -22,6 +22,7 @@ __date__ = '2023/3/10 '
 
 
 def prepare(date):
+    logging.info("抽取股票k线数据-ing:"+date.strftime("%Y-%m-%d"))
     try:
         stocks_data = stock_hist_data(date=date).get_data()
         if stocks_data is None:

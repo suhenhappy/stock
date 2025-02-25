@@ -114,7 +114,7 @@ class MainEngine:
                         print(s.name)
                 self.log.warn(u'卸载策略: %s' % old_strategy.name)
                 self.strategy_listen_event(old_strategy, "unlisten")
-                time.sleep(2)
+                time.sleep(5)
                 reload = True
             # 重新加载
             if reload:
@@ -166,7 +166,7 @@ class MainEngine:
         while True:
             try:
                 self.load_strategy(self._names)
-                time.sleep(2)
+                time.sleep(5)
             except Exception as e:
                 print(e)
 
@@ -215,7 +215,7 @@ class MainEngine:
         # 等待所有线程关闭, 直到只留下主线程
         c = threading.active_count()
         while threading.active_count() != c:
-            time.sleep(2)
+            time.sleep(5)
 
         # 调用策略的 shutdown
         self.log.debug("开始关闭策略...")

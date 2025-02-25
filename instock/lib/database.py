@@ -89,6 +89,7 @@ def insert_other_db_from_df(to_db, data, table_name, cols_type, write_index, pri
         col_name_list.insert(0, data.index.name)
     try:
         if cols_type is None:
+            logging.info("开始插入数据" + table_name)
             data.to_sql(name=table_name, con=engine_mysql, schema=to_db, if_exists='append',
                         index=write_index, )
         elif not cols_type:
@@ -96,6 +97,7 @@ def insert_other_db_from_df(to_db, data, table_name, cols_type, write_index, pri
             data.to_sql(name=table_name, con=engine_mysql, schema=to_db, if_exists='append',
                         dtype={col_name: NVARCHAR(255) for col_name in col_name_list}, index=write_index, )
         else:
+            logging.info("开始插入数据" + table_name)
             data.to_sql(name=table_name, con=engine_mysql, schema=to_db, if_exists='append',
                         dtype=cols_type, index=write_index, )
     except Exception as e:
