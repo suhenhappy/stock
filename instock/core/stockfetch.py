@@ -133,8 +133,6 @@ def fetch_stocks_fund_flow(index):
         logging.error(f"stockfetch.fetch_stocks_fund_flow处理异常：{e}")
     return None
 
-
-# 读取板块资金流向
 def fetch_stocks_sector_fund_flow(index_sector, index_indicator):
     try:
         cn_flow = tbs.CN_STOCK_SECTOR_FUND_FLOW[1][index_indicator]
@@ -142,6 +140,34 @@ def fetch_stocks_sector_fund_flow(index_sector, index_indicator):
         if data is None or len(data.index) == 0:
             return None
         data.columns = list(cn_flow['columns'])
+        
+        # 处理数值型列中的 "-" 字符
+        numeric_columns = ['fund_amount', 'fund_amount_super', 'fund_amount_large', 
+                         'fund_amount_medium', 'fund_amount_small']
+        for col in numeric_columns:
+            if col in data.columns:
+                data[col] = data[col].replace('-', None)
+                
+        return data
+    except Exception as e:
+        logging.error(f"stockfetch.fetch_stocks_sector_fund_flow处理异常：{e}")
+    return None
+
+def fetch_stocks_sector_fund_flow(index_sector, index_indicator):
+    try:
+        cn_flow = tbs.CN_STOCK_SECTOR_FUND_FLOW[1][index_indicator]
+        data = sff.stock_sector_fund_flow_rank(indicator=cn_flow['cn'], sector_type=tbs.CN_STOCK_SECTOR_FUND_FLOW[0][index_sector])
+        if data is None or len(data.index) == 0:
+            return None
+        data.columns = list(cn_flow['columns'])
+        
+        # 处理数值型列中的 "-" 字符
+        numeric_columns = ['fund_amount', 'fund_amount_super', 'fund_amount_large', 
+                         'fund_amount_medium', 'fund_amount_small']
+        for col in numeric_columns:
+            if col in data.columns:
+                data[col] = data[col].replace('-', None)
+                
         return data
     except Exception as e:
         logging.error(f"stockfetch.fetch_stocks_sector_fund_flow处理异常：{e}")
