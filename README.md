@@ -2,7 +2,7 @@
 
 InStock股票系统，抓取每日股票、ETF关键数据，计算股票技术指标、筹码分布，识别K线各种形态，综合选股，内置多种选股策略，支持选股验证回测，支持自动交易，支持批量时间，运行高效，支持PC、平板、手机移动设备显示，同时提供Docker镜像方便安装，是量化投资的好帮手。
 
-本项目地址：https://github.com/myhhub/stock
+The stock system,Capture key data on daily stocks and ETFs, calculate stock technical indicators, chip distribution, Position Cost Distribution(CYQ), identify various K-line forms, comprehensive stock selection, built-in multiple stock selection strategies, support stock selection verification and backtesting, support automatic trading, and support batch time , runs efficiently, supports display on PCs, tablets, and mobile phones, and provides Docker images for easy installation, making it a good helper for quantitative investment.
 
 Docker镜像：https://hub.docker.com/r/mayanghua/instock **镜像优化构建仅170M**。
 
@@ -25,7 +25,6 @@ MACD金叉、KDJ金叉、放量突破、低位资金净流入、高位资金净�
 股价表现、成交情况、资金流向、行情统计、沪深股通。
 ```
 ![](img/a3.jpg)
-![](img/a2.jpg)
 ![](img/a1.jpg)
 
 ##  二：股票每日数据
@@ -51,9 +50,6 @@ MACD金叉、KDJ金叉、放量突破、低位资金净流入、高位资金净�
 
 ![](img/01.jpg)
 ![](img/06.jpg)
-![](img/13.jpg)
-![](img/10.jpg)
-![](img/02.jpg)
 
 ## 四：判断买入卖出的股票
 
@@ -106,8 +102,7 @@ VR:
 正：出现买入信号
 ```
 ![](img/09.jpg)
-
-![](img/06.jpg)
+![](img/13.jpg)
 
 ## 六：筹码分布
 
@@ -262,7 +257,19 @@ python pip config --global set  global.index-url https://mirrors.aliyun.com/pypi
 ```
 在官网 https://dev.mysql.com/downloads/mysql/ 下载安装包，一键安装即可。
 ```
-### 3.安装依赖库
+### 3.安装 TA-Lib 共享静态库和头文件
+
+安装 TA-Lib C/C++ 共享静态库和头文件
+
+```
+https://ta-lib.org/install/ 下载最新 ta-lib 共享静态库和头文件，按照说明进行安装。
+安装方式按官方建议，会更简单：
+Windows Executable Installer
+macOS Homebrew
+Linux Debian packages
+```
+
+### 4.安装依赖库
 
 依赖库都是目前最新版本。
 
@@ -292,24 +299,7 @@ python  pipreqs --encoding utf-8 --force ./
 # 本项目是utf-8编码
 ```
 
-### 4.安装 talib
 
-```
-第一种方法. pip 下安装
-（1）https://www.ta-lib.org/下载并解压ta-lib-0.4.0-msvc.zip
-（2）解压并将ta_lib放在C盘根目录
-（3）https://visualstudio.microsoft.com/zh-hans/downloads/下载并安装Visual Studio Community，安装切记勾选Visual C++功能
-（4）Build TA-Lib Library # 构建 TA-Lib 库
-    ①在开始菜单中搜索并打开[Native Tools Command Prompt](根据操作系统选择32位或64位)
-    ②输入 cd C:\ta-lib\c\make\cdr\win32\msvc
-    ③构建库，输入 nmake
-（5）安装完成。
-第二种方法. Anaconda 下安装
-（1）打开Anaconda Prompt终端。
-（2）在终端输入命令行conda install -c conda-forge ta-lib 。
-（3）此处确认是否继续安装？输入y 继续安装，直到完成
-（4）安装完成。
-```
 ### 5.安装 Navicat（可选）
 
 Navicat可以方便管理数据库，以及可以手工对数据进行查看、处理、分析、挖掘。
