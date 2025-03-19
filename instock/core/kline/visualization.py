@@ -3,15 +3,20 @@
 
 
 import numpy as np
+import json
 import logging
+import os.path
 # 首映 bokeh 画图。
+from bokeh import events
+from bokeh.io import curdoc
+from bokeh.transform import factor_cmap
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.palettes import Spectral11
 from bokeh.layouts import column, row, layout
 from bokeh.models import ColumnDataSource, HoverTool, CheckboxGroup, LabelSet, Button, CustomJS, \
     CDSView, BooleanFilter, TabPanel, Tabs, Div, Styles, CrosshairTool, Span, BoxSelectTool, WheelZoomTool, PanTool, \
-    BoxZoomTool, ZoomInTool, ZoomOutTool, RedoTool, ResetTool, SaveTool, UndoTool, Range1d, NumeralTickFormatter
+    BoxZoomTool, ZoomInTool, ZoomOutTool, RedoTool, ResetTool, SaveTool, UndoTool, Text
 import instock.core.tablestructure as tbs
 import instock.core.indicator.calculate_indicator as idr
 import instock.core.pattern.pattern_recognitions as kpr
@@ -21,64 +26,42 @@ __author__ = 'myh '
 __date__ = '2023/4/6 '
 
 
-def get_plot_kline(code, stock, date, name):
+def get_plot_kline(code, stock, date, stock_name):
+    plot_list = []
     try:
-        threshold = 360
-        data = idr.get_indicators(stock, date, threshold=threshold)
+
+        data = idr.get_indicators(stock, date, threshold=360)
         if data is None:
             return None
-            
-        # 打印原始值
-        print("Original volume:", data['volume'].iloc[0])
-        
-        # 在最开始就转换金额为亿单位，成交量为万手单位
-        data['amount'] = (data['amount'] / 100000000).round(2)  # 转换为亿元单位
-        data['volume'] = (data['volume'] / 10000).round(2)  # 从手转换为万手
-        data['vol_5'] = (data['vol_5'] / 10000).round(2)  # 从手转换为万手
-        data['vol_10'] = (data['vol_10'] / 10000).round(2)  # 从手转换为万手
-        
-        # 打印转换后的值
-        print("Converted volume:", data['volume'].iloc[0])
-        
+
+        threshold = 120
         stock_column = tbs.STOCK_KLINE_PATTERN_DATA['columns']
-        data = kpr.get_pattern_recognitions(data, stock_column)
+        data = kpr.get_pattern_recognitions(data, stock_column, threshold=threshold)
         if data is None:
             return None
 
-        length = len(data.index)
-        data['index'] = list(np.arange(length))
+        cyq_days = 210
+        cyq_stock = stock.tail(n=threshold + cyq_days).copy()
 
-        # 添加颜色列到数据源
-        data['color'] = ['red' if o > c else 'green' for o, c in zip(data['open'], data['close'])]
+        min_price = data['low'].min()*0.98
+        max_price = data['high'].max()*1.02
+        k_length = len(data.index)
+        data['index'] = list(np.arange(k_length))
+        data['is_red'] = data.apply(lambda row: "1" if row['close'] > row['open'] else "0", axis=1)
+
+        # 颜色，红盘或绿盘
+        c_cmap = factor_cmap("is_red", ["red", "green"], ["1", "0"])
+        # K线图数据源
         source = ColumnDataSource(data)
-
-        inc = data['close'] >= data['open']
-        dec = data['open'] > data['close']
-        inc_source = ColumnDataSource(data.loc[inc])
-        dec_source = ColumnDataSource(data.loc[dec])
-
         # 工具条
         tools = pan, box_select, box_zoom, wheel_zoom, zoom_in, zoom_out, undo, redo, reset, save = \
             PanTool(description="平移"), BoxSelectTool(description="方框选取"), BoxZoomTool(description="方框缩放"), \
                 WheelZoomTool(description="滚轮缩放"), ZoomInTool(description="放大"), ZoomOutTool(description="缩小"), \
                 UndoTool(description="撤销"), RedoTool(description="重做"), ResetTool(description="重置"), \
                 SaveTool(description="保存", filename=f"InStock_{code}({date})")
-        # 悬停
-        tooltips = [('日期', '@date'), ('开盘', '@open'),
-                    ('最高', '@high'), ('最低', '@low'),
-                    ('收盘', '@close'), ('涨跌', '@quote_change%'),
-                    ('金额', '@{amount}{0.00}亿'), 
-                    ('成交量', '@{volume}{0.00}万手'), 
-                    ('换手', '@turnover%')]
 
-        hover = HoverTool(tooltips=tooltips, description="悬停")
-
-        # 十字瞄准线
-        crosshair = CrosshairTool(overlay=[Span(dimension="width", line_dash="dashed", line_width=2),
-                                           Span(dimension="height", line_dash="dotted", line_width=2)],
-                                  description="十字瞄准线")
         # K线图
-        p_kline = figure(width=1000, height=300, x_range=(0, length + 1), min_border_left=80,
+        p_kline = figure(width=1000, height=300, x_range=(0, k_length + 1), y_range=(min_price, max_price), min_border_left=80,
                          tools=tools, toolbar_location='above')
         # 均线
         sam_labels = ("close", "ma10", "ma20", "ma50", "ma200")
@@ -89,74 +72,78 @@ def get_plot_kline(code, stock, date, name):
         p_kline.legend.click_policy = "hide"
 
         # 股价柱
-        p_kline.segment(x0='index', y0='high', x1='index', y1='low', color='red', source=inc_source)
-        p_kline.segment(x0='index', y0='high', x1='index', y1='low', color='green', source=dec_source)
-        p_kline.vbar('index', 0.5, 'open', 'close', fill_color='red', line_color='red', source=inc_source,
+        c_segment =p_kline.segment(x0='index', y0='high', x1='index', y1='low', color=c_cmap, source=source)
+        p_kline.vbar('index', 0.5, 'open', 'close', fill_color=c_cmap, line_color=c_cmap, source=source,
                      hover_fill_alpha=0.5)
-        p_kline.vbar('index', 0.5, 'open', 'close', fill_color='green', line_color='green', source=dec_source,
-                     hover_fill_alpha=0.5)
-        p_kline.add_tools(hover, crosshair)
 
-        # 修改形态标注的显示
-        pattern_is_show = True
+        # 悬停
+        tooltips = [('日期', '@date'), ('开盘', '@open'),
+                    ('最高', '@high'), ('最低', '@low'),
+                    ('收盘', '@close'), ('涨跌', '@quote_change%'),
+                    ('金额', '@amount{¥0}'), ('换手', '@turnover%')]
+
+        hover = HoverTool(tooltips=tooltips, description="悬停", renderers=[c_segment])
+
+        # 十字瞄准线
+        crosshair = CrosshairTool(overlay=[Span(dimension="width", line_dash="dashed", line_width=2),
+                                           Span(dimension="height", line_dash="dotted", line_width=2)],
+                                  description="十字瞄准线")
+        # 筹码分布
+        div_cyq = Div()
+        p_cyq = figure(width=160, height=p_kline.height, y_range=p_kline.y_range, min_border_left=0,
+                       toolbar_location=None, y_axis_location="right")
+        p_cyq.xgrid.grid_line_color = None
+        p_cyq.xaxis.visible = False
+        cyq_avgcost_line = p_cyq.line(x="x", y="y", color="red", line_width=2, line_dash="dotted")
+        cyq_avgcost_text = p_cyq.add_glyph(ColumnDataSource(dict(x=[], y=[], text=[])),glyph = Text(x="x", y="y", text="text",text_align="center"))
+        cyq_down_varea = p_cyq.varea(x="x", y1="y1", y2=0, fill_alpha=0.3, fill_color="red")
+        cyq_up_varea = p_cyq.varea(x="x", y1="y1", y2=0, fill_alpha=0.3, fill_color="blue")
+        json_str_stock = cyq_stock.to_json(orient="records")
+        js_array_str_stock = json.dumps(json.loads(json_str_stock), indent=2)
+        cqy_callback =  CustomJS.from_file(os.path.join(os.path.dirname(__file__), "cyq.js"), isinit=False, div_cyq=div_cyq, cyq_avgcost_line=cyq_avgcost_line.data_source, cyq_avgcost_text=cyq_avgcost_text.data_source, cyq_down_varea=cyq_down_varea.data_source, cyq_up_varea=cyq_up_varea.data_source, kline_data=js_array_str_stock, k_range=k_length, cyq_days=cyq_days)
+        cqy_hover = HoverTool(tooltips=None, callback=cqy_callback, renderers=[c_segment])
+        cqy_callback_isinit =  CustomJS.from_file(os.path.join(os.path.dirname(__file__), "cyq.js"), isinit=True, div_cyq=div_cyq, cyq_avgcost_line=cyq_avgcost_line.data_source, cyq_avgcost_text=cyq_avgcost_text.data_source, cyq_down_varea=cyq_down_varea.data_source, cyq_up_varea=cyq_up_varea.data_source, kline_data=js_array_str_stock, k_range=k_length, cyq_days=cyq_days)
+        curdoc().on_event(events.DocumentReady, cqy_callback_isinit)
+
+        # K线图添加工具
+        p_kline.add_tools(hover, cqy_hover, crosshair)
+
+        # 形态信息
+        pattern_is_show = True  # 形态缺省是否显示
         checkboxes_args = {}
         checkboxes_code = """let acts = cb_obj.active;"""
         pattern_labels = []
         i = 0
-        y_offset = 5  # 基础偏移量
-        
         for k in stock_column:
             label_cn = stock_column[k]['cn']
-            # 处理上方标注
             label_mask_u = (data[k] > 0)
             label_data_u = data.loc[label_mask_u].copy()
             isHas = False
             if len(label_data_u.index) > 0:
-                # 计算每个标注的垂直位置
-                label_data_u.loc[:, 'y_offset'] = y_offset + (i * 15)  # 每个形态增加15个单位的偏移
                 label_data_u.loc[:, 'label_cn'] = label_cn
                 label_source_u = ColumnDataSource(label_data_u)
-                locals()[f'pattern_labels_u_{str(i)}'] = LabelSet(
-                    x='index', 
-                    y='high',
-                    y_offset='y_offset',  # 使用动态计算的偏移量
-                    text="label_cn",
-                    source=label_source_u,
-                    x_offset=7,
-                    angle=90,
-                    angle_units='deg',
-                    text_color='red',
-                    text_font_style='bold',
-                    text_font_size="9pt",
-                    visible=pattern_is_show
-                )
+                locals()[f'pattern_labels_u_{str(i)}'] = LabelSet(x='index', y='high', text="label_cn",
+                                                                  source=label_source_u, x_offset=7, y_offset=5,
+                                                                  angle=90, angle_units='deg', text_color='red',
+                                                                  text_font_style='bold', text_font_size="9pt",
+                                                                  visible=pattern_is_show)
                 p_kline.add_layout(locals()[f'pattern_labels_u_{str(i)}'])
                 checkboxes_args[f'lsu{str(i)}'] = locals()[f'pattern_labels_u_{str(i)}']
                 checkboxes_code = f"{checkboxes_code}lsu{i}.visible = acts.includes({i});"
                 pattern_labels.append(label_cn)
                 isHas = True
 
-            # 处理下方标注，类似地添加偏移
             label_mask_d = (data[k] < 0)
             label_data_d = data.loc[label_mask_d].copy()
             if len(label_data_d.index) > 0:
-                label_data_d.loc[:, 'y_offset'] = -(y_offset + (i * 15))  # 下方标注使用负偏移
                 label_data_d.loc[:, 'label_cn'] = label_cn
                 label_source_d = ColumnDataSource(label_data_d)
-                locals()[f'pattern_labels_d_{str(i)}'] = LabelSet(
-                    x='index',
-                    y='low',
-                    y_offset='y_offset',  # 使用动态计算的偏移量
-                    text='label_cn',
-                    source=label_source_d,
-                    x_offset=-7,
-                    angle=270,
-                    angle_units='deg',
-                    text_color='green',
-                    text_font_style='bold',
-                    text_font_size="9pt",
-                    visible=pattern_is_show
-                )
+                locals()[f'pattern_labels_d_{str(i)}'] = LabelSet(x='index', y='low', text='label_cn',
+                                                                  source=label_source_d, x_offset=-7, y_offset=-5,
+                                                                  angle=270, angle_units='deg',
+                                                                  text_color='green',
+                                                                  text_font_style='bold', text_font_size="9pt",
+                                                                  visible=pattern_is_show)
                 p_kline.add_layout(locals()[f'pattern_labels_d_{str(i)}'])
                 checkboxes_args[f'lsd{str(i)}'] = locals()[f'pattern_labels_d_{str(i)}']
                 checkboxes_code = f"{checkboxes_code}lsd{i}.visible = acts.includes({i});"
@@ -171,18 +158,12 @@ def get_plot_kline(code, stock, date, name):
         # 交易量柱
         p_volume = figure(width=p_kline.width, height=120, x_range=p_kline.x_range,
                           min_border_left=p_kline.min_border_left, tools=tools, toolbar_location=None)
-        
-        # 格式化y轴数字显示，添加万单位
-        p_volume.yaxis.formatter = NumeralTickFormatter(format="0.00")  # 显示2位小数
-        p_volume.yaxis.axis_label = "成交量(万手)"  # 添加单位说明
-        
         vol_labels = ("vol_5", "vol_10")
         for name, color in zip(vol_labels, Spectral11):
             p_volume.line(x=data['index'], y=data[name], legend_label=name, color=color, line_width=1.5, alpha=0.8)
         p_volume.legend.location = "top_left"
         p_volume.legend.click_policy = "hide"
-        p_volume.vbar('index', 0.5, 0, 'volume', color='red', source=inc_source)
-        p_volume.vbar('index', 0.5, 0, 'volume', color='green', source=dec_source)
+        p_volume.vbar('index', 0.5, 0, 'volume', color=c_cmap, source=source)
         p_volume.add_tools(crosshair)
         p_volume.xaxis.major_label_overrides = {i: date for i, date in enumerate(data['date'])}
         # p_volume.xaxis.major_label_orientation = pi / 4
@@ -260,7 +241,7 @@ def get_plot_kline(code, stock, date, name):
         else:
             code_name = f"SZ{code}"
         div_dfcf_hq = Div(
-            text=f"""<a href="https://quote.eastmoney.com/{code_name}.html" target="_blank">{code}{name}行情</a>""",
+            text=f"""<a href="https://quote.eastmoney.com/{code_name}.html" target="_blank">{code}{stock_name}行情</a>""",
             width=150)
         if code.startswith(('1', '5')):
             div_dfcf_zl = Div()
@@ -275,33 +256,13 @@ def get_plot_kline(code, stock, date, name):
         # 组合图
         layouts = layout(row(
             column(
-                row(children=[div_attention, div_dfcf_hq, div_dfcf_zl, div_dfcf_pr, select_all, select_none],
-                    align='end'),
-                p_kline,
-                p_volume, tabs_indicators), ck))
+                row(children=[div_attention, div_dfcf_hq, div_dfcf_zl, div_dfcf_pr, select_all, select_none],align='end'),
+                row(children=[p_kline, p_cyq]),
+                row(children=[column(p_volume, tabs_indicators),div_cyq])),
+                ck))
         script, div = components(layouts)
 
-        # 创建图表
-        p = figure(
-            width=1000,
-            height=700,
-            tools=[PanTool(), WheelZoomTool(), BoxZoomTool(), ResetTool()],
-            x_range=Range1d(0, len(data)),
-            y_range=Range1d(min(data['low']), max(data['high']))
-        )
-        
-        # 使用数据源中的颜色列
-        p.segment('index', 'high', 'index', 'low', source=source)
-        p.vbar('index', 0.5, 'open', 'close', source=source,
-               fill_color='color', line_color='color')
-               
-        # 添加均线
-        p.line('index', 'ma5', source=source, color='blue', legend_label='MA5')
-        p.line('index', 'ma10', source=source, color='yellow', legend_label='MA10')
-        p.line('index', 'ma20', source=source, color='purple', legend_label='MA20')
-        
         return {"script": script, "div": div}
-        
     except Exception as e:
         logging.error(f"visualization.get_plot_kline处理异常：{e}")
-        return None
+    return None
