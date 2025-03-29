@@ -64,6 +64,14 @@ def get_connection():
         logging.error(f"database.conn_not_cursor处理异常：{MYSQL_CONN_DBAPI}{e}")
     return None
 
+def convert_fund_value(value):
+    """转换资金流数据值"""
+    if value == '-' or value is None or value == '':
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
 
 # 定义通用方法函数，插入数据库表，并创建数据库主键，保证重跑数据的时候索引唯一。
 def insert_db_from_df(data, table_name, cols_type, write_index, primary_keys, indexs=None):
@@ -73,6 +81,31 @@ def insert_db_from_df(data, table_name, cols_type, write_index, primary_keys, in
 
 # 增加一个插入到其他数据库的方法。
 def insert_other_db_from_df(to_db, data, table_name, cols_type, write_index, primary_keys, indexs=None):
+     # 如果是资金流相关表，先删除当天的数据
+    if 'fund_flow' in table_name:
+        today = data['date'].iloc[0] if not data.empty else None
+        if today:
+            delete_sql = f"DELETE FROM `{table_name}` WHERE date = '{today}'"
+            with get_connection() as conn:
+                with conn.cursor() as db:
+                    db.execute(delete_sql)
+                    conn.commit()
+
+        # 数据预处理：转换资金流相关数据
+        fund_columns = [col for col in data.columns if 'fund_' in col]
+        rate_columns = [col for col in data.columns if 'rate_' in col or 'change_rate' in col]
+    
+        # 转换资金相关字段
+        # 转换资金相关字段
+        for col in fund_columns:
+            if col in data.columns:  # 确保列存在
+                data[col] = data[col].apply(convert_fund_value)
+        
+        # 转换比率相关字段
+        for col in rate_columns:
+            if col in data.columns:  # 确保列存在
+                data[col] = data[col].apply(convert_fund_value)
+
     # 定义engine
     if to_db is None:
         engine_mysql = engine()
